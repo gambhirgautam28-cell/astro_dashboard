@@ -206,6 +206,113 @@ document.getElementById('logout').addEventListener('click', ()=> {
   localStorage.removeItem('astro_session'); window.location.href='login.html';
 });
 </script>
+  <!-- PubNub SDK -->
+<script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.0.min.js"></script>
+
+<script>
+const pubnub = new PubNub({
+    publishKey: "pub-c-a90a128a-4e77-4b6a-bbb3-59d0fb688ddc",
+    subscribeKey: "sub-c-1b514e35-fab1-4baf-88f1-6b628ab7e9c2",
+    uuid: "astro_gautam"
+});
+
+const CHANNEL = "astro_gautam_channel";
+
+// DOM Elements
+const activeSessionsDiv = document.getElementById("activeSessions");
+const chatBox = document.getElementById("chatBox");
+const chatInput = document.getElementById("chatInput");
+const sendBtn = document.getElementById("sendBtn");
+
+let currentSessionId = null;
+
+// Subscribe to PubNub Channel
+pubnub.subscribe({ channels: [CHANNEL] });
+
+pubnub.addListener({
+    message: function(event) {
+        const msg = event.message;
+
+        // First incoming message → create active session card
+        if (!currentSessionId) {
+            currentSessionId = msg.sessionId || "customer_1";
+
+            activeSessionsDiv.innerHTML = `
+                <div class="session-card selected">
+                    <strong>Customer</strong>
+                    <div>Live Chat</div>
+                </div>
+            `;
+        }
+
+        // Show message
+        renderIncomingMessage(msg.text);
+    }
+});
+
+// Render customer → astrologer message
+function renderIncomingMessage(text) {
+    const bubble = `
+        <div class="msg incoming">
+            <div class="bubble">${text}</div>
+        </div>
+    `;
+    chatBox.innerHTML += bubble;
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Send reply
+sendBtn.addEventListener("click", sendReply);
+
+function sendReply() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+
+    pubnub.publish({
+        channel: CHANNEL,
+        message: {
+            sender: "gautam",
+            type: "astro_reply",
+            text: text
+        }
+    });
+
+    renderOutgoingMessage(text);
+    chatInput.value = "";
+}
+
+function renderOutgoingMessage(text) {
+    const bubble = `
+        <div class="msg outgoing">
+            <div class="bubble">${text}</div>
+        </div>
+    `;
+    chatBox.innerHTML += bubble;
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+</script>
+
+<style>
+.msg { margin: 10px; display: flex; }
+.msg.incoming { justify-content: flex-start; }
+.msg.outgoing { justify-content: flex-end; }
+
+.bubble {
+    padding: 10px 14px;
+    background: #fff;
+    border-radius: 16px;
+    max-width: 60%;
+}
+
+.msg.incoming .bubble {
+    background: #e8f7e8;
+}
+
+.msg.outgoing .bubble {
+    background: #ffdccc;
+}
+</style>
+
 </body>
 </html>
 
