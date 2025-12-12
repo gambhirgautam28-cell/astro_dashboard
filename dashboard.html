@@ -1,282 +1,211 @@
 <!doctype html>
 <html>
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Astrologer Dashboard</title>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Astrologer Dashboard — Gautam</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{--accent:#6b4fe6;--soft:#f8f8fa}
-  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#f6f7fb,#f0f2f5)}
-  .wrap{display:flex;height:100vh;gap:18px;padding:18px;box-sizing:border-box;align-items:stretch;justify-content:center}
-  .panel{background:white;border-radius:12px;box-shadow:0 10px 30px rgba(11,17,30,.06);overflow:hidden;border:1px solid rgba(10,10,10,0.03)}
-  .sidebar{width:320px;min-width:240px;max-width:340px;display:flex;flex-direction:column}
-  .sidebar .head{padding:16px;border-bottom:1px solid rgba(0,0,0,.04);display:flex;align-items:center;gap:12px}
+  :root{--bg:#f6f6f8;--card:#fff;--accent:#F8CFAF}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui;background:var(--bg)}
+  .wrap{display:flex;height:100vh;padding:18px;box-sizing:border-box;gap:18px}
+  .panel{background:var(--card);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.06);overflow:hidden}
+  .sidebar{width:320px;display:flex;flex-direction:column}
+  .head{padding:14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0f2;background:linear-gradient(90deg,#fff,#fbfbfb)}
   .avatar{width:46px;height:46px;border-radius:10px;background:#eee;object-fit:cover}
   .who{font-weight:700}
-  .muted{font-size:13px;color:#666}
-  .list{padding:10px;overflow:auto;flex:1;background:linear-gradient(180deg,#fff,#fbfbfb)}
+  .list{padding:12px;overflow:auto;flex:1;background:#fff}
   .session-item{padding:10px;border-radius:10px;margin-bottom:8px;display:flex;gap:8px;align-items:center;cursor:pointer;border:1px solid transparent}
-  .session-item:hover{background:#f8f8fb;border-color:rgba(0,0,0,0.03)}
-  .session-item .dot{width:10px;height:10px;border-radius:50%;background:#34d399;margin-right:6px}
-  .session-meta{font-size:13px;color:#111}
-  .session-sub{font-size:12px;color:#666;margin-top:4px}
-
-  /* Chat area */
-  .chat-area{flex:1;display:flex;flex-direction:column;min-width:320px;max-width:900px}
-  .chat-header{padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.04);display:flex;align-items:center;gap:12px;background:var(--soft)}
-  .chat-title{font-weight:700}
-  .chat-body{flex:1;background:linear-gradient(180deg,#e5ddd5,#e3dacb);padding:16px;overflow:auto;display:flex;flex-direction:column;gap:10px}
-  .bubble{max-width:72%;padding:10px 12px;border-radius:12px;box-shadow:0 2px 0 rgba(0,0,0,0.02)}
-  .bubble.me{align-self:flex-end;background:#eefbe9;border-bottom-right-radius:6px}
-  .bubble.them{align-self:flex-start;background:white;border-bottom-left-radius:6px}
-  .meta{font-size:12px;color:#556;margin-top:6px;display:flex;gap:8px;align-items:center}
-  .input-row{padding:12px;border-top:1px solid rgba(0,0,0,.04);background:white;display:flex;gap:10px;align-items:center}
-  .input{flex:1;padding:10px;border-radius:999px;border:1px solid #e6e6e6;background:#fafafa}
-  .send{background:linear-gradient(90deg,#fb8b55,#f8cfa7);padding:10px 14px;border-radius:999px;border:0;color:#111;font-weight:700}
-  .small{font-size:13px;color:#6b7280}
-  .top-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
-  .logout{background:transparent;border:0;color:#6b7280;cursor:pointer}
-  /* responsive */
-  @media (max-width:880px){ .wrap{padding:12px} .sidebar{display:none} .chat-area{max-width:100%} }
+  .session-item:hover{background:#fafafa;border-color:#f0f0f2}
+  .chat-area{flex:1;display:flex;flex-direction:column}
+  .chat-header{padding:14px;border-bottom:1px solid #f0f0f2;background:#fff}
+  .chat-body{flex:1;padding:16px;background:linear-gradient(180deg,#e5ddd5,#e3dacb);overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .bubble{max-width:72%;padding:10px 12px;border-radius:12px}
+  .me{align-self:flex-end;background:#eefbe9}
+  .them{align-self:flex-start;background:#fff}
+  .meta{font-size:12px;color:#444}
+  .composer{display:flex;gap:10px;padding:12px;border-top:1px solid #f0f0f2;background:#fff}
+  .input{flex:1;padding:10px;border-radius:999px;border:1px solid #eee;background:#fafafa}
+  .send{padding:10px 14px;border-radius:999px;border:0;background:linear-gradient(90deg,#fb8b55,#f8cfa7);font-weight:700;cursor:pointer}
+  @media (max-width:880px){ .sidebar{display:none} }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div style="width:340px" class="panel sidebar" aria-hidden="false">
+  <div class="panel sidebar">
     <div class="head">
-      <img id="astroSmallAvatar" class="avatar" src="" alt="avatar">
+      <div class="avatar" id="astroAvatar" style="background-image:url('https://via.placeholder.com/150?text=Upload');background-size:cover"></div>
       <div>
-        <div id="astroUser" class="who">Astrologer</div>
-        <div id="astroOnline" class="muted">Online</div>
+        <div id="astroUser" class="who">Gautam</div>
+        <div id="astroOnline" style="font-size:13px;color:#666">Online</div>
       </div>
-      <div style="margin-left:auto" class="top-actions">
-        <button id="logoutBtn" class="logout">Logout</button>
-      </div>
+      <div style="margin-left:auto"><button id="logout">Logout</button></div>
     </div>
-    <div style="padding:12px;border-bottom:1px solid rgba(0,0,0,0.03)">
-      <div class="small">Active Sessions</div>
-    </div>
-    <div id="sessionsList" class="list" role="list">
-      <!-- dynamic -->
-      <div class="small" style="padding:12px;color:#6b7280">Waiting for customers…</div>
-    </div>
+
+    <div style="padding:12px;border-bottom:1px solid #f0f0f2">Active Sessions</div>
+    <div id="sessions" class="list"><div style="color:#6b7280;padding:12px">Waiting for customers…</div></div>
   </div>
 
-  <div class="panel chat-area" role="region" aria-live="polite" aria-label="Chat area">
+  <div class="panel chat-area" style="flex:1;display:flex;flex-direction:column">
     <div class="chat-header">
-      <div>
-        <div id="chatWith" class="chat-title">Select a session</div>
-        <div id="chatSub" class="muted">No session selected</div>
-      </div>
+      <div id="chatTitle">Select a session</div>
+      <div id="chatSubtitle" style="font-size:13px;color:#666">No session selected</div>
     </div>
 
-    <div id="chatBody" class="chat-body">
-      <div class="small" style="opacity:.9">No messages yet</div>
-    </div>
+    <div id="chatBody" class="chat-body"><div style="opacity:.9">No messages yet</div></div>
 
-    <div class="input-row" id="composer" style="display:none">
-      <input id="replyInput" class="input" placeholder="Write a reply..." />
-      <button id="replySend" class="send">Send</button>
+    <div class="composer" id="composer" style="display:none">
+      <input id="reply" class="input" placeholder="Reply to customer..."/>
+      <button id="send" class="send">Send</button>
     </div>
   </div>
 </div>
 
-<!-- PubNub SDK -->
 <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.0.min.js"></script>
 <script>
-/* =========== CONFIG =========== */
+/* ---------- CONFIG ---------- */
 const PUB = "pub-c-a90a128a-4e77-4b6a-bbb3-59d0fb688ddc";
 const SUB = "sub-c-1b514e35-fab1-4baf-88f1-6b628ab7e9c2";
+const ASTRO = "Gautam"; // astrologer key (login determines this)
 
-/* Simple astrologer profile (from login) */
-function requireAuth(){
+/* ---------- Auth (simple client-side session created by login page) */
+(function requireAuth(){
   try{
     const s = JSON.parse(localStorage.getItem('astro_session')||'null');
-    if(!s || !s.user){ window.location.href = './login.html'; return null; }
-    return s.user;
-  } catch(e){ window.location.href = './login.html'; return null; }
-}
-const ASTRO_USER = requireAuth();
-if(!ASTRO_USER) throw new Error('Auth required');
-document.getElementById('astroUser').textContent = ASTRO_USER;
-document.getElementById('chatWith').textContent = 'Select a session';
-document.getElementById('astroSmallAvatar').src = 'https://via.placeholder.com/150?text=Upload';
-document.getElementById('astroOnline').textContent = 'Online';
+    if(!s || !s.user || s.user !== ASTRO){ window.location.href = 'login.html'; return; }
+    document.getElementById('astroUser').textContent = s.user;
+  }catch(e){ window.location.href='login.html'; return; }
+})();
 
-/* UI elements */
-const sessionsList = document.getElementById('sessionsList');
-const chatBody = document.getElementById('chatBody');
-const chatWith = document.getElementById('chatWith');
-const chatSub = document.getElementById('chatSub');
-const composer = document.getElementById('composer');
-const replyInput = document.getElementById('replyInput');
-const replySend = document.getElementById('replySend');
-const logoutBtn = document.getElementById('logoutBtn');
-
-/* PubNub */
-const uuid = 'astro_dashboard_' + ASTRO_USER + '_' + Math.random().toString(36).slice(2,6);
+/* ---------- PubNub init ---------- */
+const uuid = 'astro_' + ASTRO + '_' + Math.random().toString(36).slice(2,6);
 const pubnub = new PubNub({ publishKey: PUB, subscribeKey: SUB, uuid });
 
-/* control channel for this astrologer — customers publish join messages here */
-const CONTROL = `astro_${ASTRO_USER}_control`;
+const CONTROL = `astro_${ASTRO}_control`; // customers announce join here
 
 /* state */
-const sessions = {}; // sessionId -> { uuid, lastTs, messages:[] }
-let selectedSession = null;
+const sessions = {}; // sessionId -> { uuid, messages:[] }
+let selected = null;
 
-/* subscribe to control channel to see incoming joins */
+/* UI refs */
+const sessionsEl = document.getElementById('sessions');
+const chatBody = document.getElementById('chatBody');
+const chatTitle = document.getElementById('chatTitle');
+const chatSubtitle = document.getElementById('chatSubtitle');
+const composer = document.getElementById('composer');
+const replyInput = document.getElementById('reply');
+const sendBtn = document.getElementById('send');
+
+/* listen for join/leave and messages */
 pubnub.addListener({
   message: (evt) => {
-    const msg = evt.message;
-    if(msg && msg.type === 'join' && msg.astro === ASTRO_USER){
-      // new or update session
-      const sessionId = msg.channel; // expected: session_<astro>_<uuid>
-      const user = msg.uuid;
-      if(!sessions[sessionId]){
-        sessions[sessionId] = { uuid: user, id: sessionId, messages: [], lastTs: msg.ts || Date.now() };
-        addSessionToList(sessions[sessionId]);
-      } else {
-        sessions[sessionId].lastTs = msg.ts || Date.now();
-        refreshSessionList();
-      }
-    } else if (msg && msg.type === 'leave' && msg.astro === ASTRO_USER){
-      const sessionId = msg.channel;
-      if(sessions[sessionId]){ sessions[sessionId].left = true; refreshSessionList(); }
-    } else if(msg && msg.type === 'message'){
-      // if chat body open for this session, append; else store
-      const sessionId = msg.channel;
-      if(!sessions[sessionId]){ sessions[sessionId] = { uuid: msg.uuid, id: sessionId, messages: [] }; addSessionToList(sessions[sessionId]); }
-      sessions[sessionId].messages.push(msg);
-      sessions[sessionId].lastTs = msg.ts || Date.now();
-      if(selectedSession === sessionId){
-        appendBubble(msg, 'them');
-      } else {
-        // highlight
-        refreshSessionList();
-      }
-    } else if(msg && msg.type === 'deliveredAck'){
-      // update ticks in UI (optional)
-      // msg.deliveredFor <- id
+    const m = evt.message;
+    // messages on any channel (we also subscribe to CONTROL)
+    if(m && m.type === 'join' && m.astro === ASTRO){
+      // new customer announced: m.channel contains their session channel
+      const sid = m.channel;
+      if(!sessions[sid]){ sessions[sid] = { id: sid, uuid: m.uuid, messages: [], lastTs: m.ts||Date.now() }; addSession(sessions[sid]); }
+      else { sessions[sid].lastTs = m.ts||Date.now(); refreshList(); }
+    } else if(m && m.type === 'leave' && m.astro === ASTRO){
+      const sid = m.channel;
+      if(sessions[sid]) { sessions[sid].left = true; refreshList(); }
+    } else if(m && m.sender){
+      // real chat message from a session channel
+      const channel = evt.channel;
+      if(!sessions[channel]){ sessions[channel] = { id: channel, uuid: m.sender, messages: [] }; addSession(sessions[channel]); }
+      sessions[channel].messages.push(m);
+      if(selected === channel){ appendMsg(m, 'them'); } else { refreshList(); }
+    }
+  },
+  signal: (evt) => {
+    // typing signals if needed
+    const ch = evt.channel; const m = evt.message;
+    if(m && m.type==='typing' && selected === ch){
+      // show typing statue temporarily
+      // (left as simple text in subtitle)
+      document.getElementById('chatSubtitle').textContent = m.isTyping ? 'Customer is typing…' : '';
     }
   }
 });
 
-pubnub.subscribe({ channels: [CONTROL], withPresence: true });
+/* subscribe CONTROL to discover customers */
+pubnub.subscribe({ channels: [CONTROL] });
 
-/* allow pubnub to receive messages published to session channels by customers */
-// we'll subscribe to selected session channel dynamically when opened
-
-/* add session UI */
-function addSessionToList(session){
-  // remove placeholder text
-  if(sessionsList.firstChild && sessionsList.firstChild.classList && sessionsList.firstChild.classList.contains('small')){
-    sessionsList.innerHTML = '';
-  }
-  const wrap = document.createElement('div');
-  wrap.className = 'session-item';
-  wrap.setAttribute('role','listitem');
-  wrap.id = 's_'+session.id;
-  const info = document.createElement('div');
-  info.style.flex='1';
-  const title = document.createElement('div'); title.className='session-meta'; title.textContent = 'Customer • ' + (session.uuid || session.id.split('_').pop());
-  const sub = document.createElement('div'); sub.className='session-sub'; sub.textContent = 'Joined ' + new Date(session.lastTs).toLocaleTimeString();
-  info.appendChild(title); info.appendChild(sub);
-  wrap.appendChild(info);
-  wrap.addEventListener('click', ()=> openSession(session.id));
-  sessionsList.prepend(wrap);
+/* add session item */
+function addSession(s){
+  if(sessionsEl.firstChild && sessionsEl.firstChild.textContent.includes('Waiting for customers')) sessionsEl.innerHTML='';
+  const el = document.createElement('div');
+  el.className = 'session-item';
+  el.id = 'session_'+encodeURIComponent(s.id);
+  el.innerHTML = `<div style="flex:1"><div style="font-weight:700">Customer • ${s.uuid || s.id.split('_').pop()}</div><div style="font-size:12px;color:#666">Joined ${new Date(s.lastTs).toLocaleTimeString()}</div></div>`;
+  el.onclick = ()=> openSession(s.id);
+  sessionsEl.prepend(el);
 }
 
-/* refresh list to show ordering & indicators */
-function refreshSessionList(){
-  const arr = Object.values(sessions).sort((a,b)=> (b.lastTs||0) - (a.lastTs||0));
-  sessionsList.innerHTML = '';
-  if(arr.length===0){
-    sessionsList.innerHTML = '<div class="small" style="padding:12px;color:#6b7280">Waiting for customers…</div>';
-    return;
-  }
-  arr.forEach(s => addSessionToList(s));
+/* refresh (simple) */
+function refreshList(){
+  const arr = Object.values(sessions).sort((a,b)=> (b.lastTs||0)-(a.lastTs||0));
+  sessionsEl.innerHTML = '';
+  if(arr.length===0){ sessionsEl.innerHTML = '<div style="color:#6b7280;padding:12px">Waiting for customers…</div>'; return; }
+  arr.forEach(addSession);
 }
 
-/* open session: subscribe to channel and load history */
+/* open session: subscribe to that channel and load history */
 function openSession(sessionId){
-  selectedSession = sessionId;
+  selected = sessionId;
   chatBody.innerHTML = '';
-  chatWith.textContent = 'Chat with ' + (sessions[sessionId].uuid || sessionId.split('_').pop());
-  chatSub.textContent = sessionId;
+  chatTitle.textContent = 'Session: ' + sessionId.split('_').pop();
+  chatSubtitle.textContent = sessionId;
   composer.style.display = 'flex';
-  // subscribe to that channel if not yet
+  // subscribe to session channel
   pubnub.subscribe({ channels: [sessionId] });
+
   // load history
-  pubnub.history({ channel: sessionId, count: 100 }, (st, res) => {
-    const msgs = (res.messages || []).map(m => m.entry);
+  pubnub.history({ channel: sessionId, count: 100 }, (st,res) => {
     chatBody.innerHTML = '';
-    msgs.forEach(m => {
-      const who = (m.sender === sessions[sessionId].uuid) ? 'them' : (m.sender === uuid ? 'me' : (m.sender === sessions[sessionId].uuid ? 'them' : 'them'));
-      appendBubble(m, who);
-    });
-    scrollChatBottom();
+    const msgs = (res.messages||[]).map(m=>m.entry);
+    msgs.forEach(m => { appendMsg(m, m.sender === pubnub.getUUID() ? 'me' : 'them'); });
+    chatBody.scrollTop = chatBody.scrollHeight;
   });
 }
 
-/* append bubble */
-function appendBubble(m, who){
+/* append message bubble */
+function appendMsg(m, who){
   const b = document.createElement('div');
-  b.className = 'bubble ' + (who === 'me' ? 'me' : 'them');
-  b.textContent = m.text || '';
-  const meta = document.createElement('div');
-  meta.className='meta';
-  const t = document.createElement('span'); t.textContent = new Date(m.ts||Date.now()).toLocaleTimeString();
-  const ticks = document.createElement('span'); ticks.style.marginLeft='8px';
-  if(who==='me'){ ticks.textContent = m.status==='delivered' ? '✓✓' : (m.status==='sent' ? '✓' : ''); }
-  meta.appendChild(t); meta.appendChild(ticks);
+  b.className = 'bubble ' + (who==='me' ? 'me' : 'them');
+  b.textContent = m.text || m.message || JSON.stringify(m);
+  const meta = document.createElement('div'); meta.className='meta';
+  meta.textContent = new Date((m.ts||Date.now())).toLocaleTimeString();
   chatBody.appendChild(b); chatBody.appendChild(meta);
-  scrollChatBottom();
+  chatBody.scrollTop = chatBody.scrollHeight;
 }
-
-/* scroll */
-function scrollChatBottom(){ chatBody.scrollTop = chatBody.scrollHeight; }
 
 /* send reply */
-replySend.addEventListener('click', ()=> {
-  const text = replyInput.value.trim();
-  if(!text || !selectedSession) return;
-  const payload = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,4), sender: uuid, text, ts: Date.now(), status:'sent' };
-  // publish to session channel
-  pubnub.publish({ channel: selectedSession, message: payload }, (st, res)=>{
-    if(!st.error){
-      // after publish, render locally as me (astrologer)
-      appendBubble(payload, 'me');
-      // optionally publish delivered ack to the control or session
-      // pubnub.publish({ channel: selectedSession, message: { type:'deliveredAck', deliveredFor: payload.id }});
-    } else {
-      console.error('send failed', st);
-    }
+sendBtn.onclick = () => {
+  const text = replyInput.value.trim(); if(!text || !selected) return;
+  const payload = { id: Date.now().toString(36), sender: pubnub.getUUID(), text, ts: Date.now(), status:'sent' };
+  pubnub.publish({ channel: selected, message: payload }, (s,r) => {
+    if(!s.error){ appendMsg(payload, 'me'); replyInput.value=''; }
   });
-  replyInput.value = '';
+};
+
+/* typing */
+let _t;
+replyInput.addEventListener('input', ()=> {
+  if(!selected) return;
+  pubnub.signal({ channel: selected, message: { type:'typing', from: pubnub.getUUID(), isTyping:true }});
+  clearTimeout(_t); _t = setTimeout(()=> {
+    pubnub.signal({ channel: selected, message: { type:'typing', from: pubnub.getUUID(), isTyping:false }});
+  }, 900);
 });
 
-/* typing from astrologer to customer */
-replyInput.addEventListener('input', ()=> {
-  if(!selectedSession) return;
-  pubnub.signal({ channel: selectedSession, message: { type:'typing', from: uuid, isTyping: true }});
-  // clear typing after 1s
-  clearTimeout(window._typingT); window._typingT = setTimeout(()=> {
-    pubnub.signal({ channel: selectedSession, message: { type:'typing', from: uuid, isTyping: false }});
-  }, 1200);
-});
+/* initial refresh */
+refreshList();
 
 /* logout */
-logoutBtn.addEventListener('click', ()=> {
-  localStorage.removeItem('astro_session');
-  window.location.href = './login.html';
+document.getElementById('logout').addEventListener('click', ()=> {
+  localStorage.removeItem('astro_session'); window.location.href='login.html';
 });
-
-/* initial check: ask presence for CONTROL */
-setTimeout(()=>{ pubnub.hereNow({ channels:[CONTROL] }, (s,r)=> { /* nothing special here */ }); }, 500);
-
-/* helpful: allow manual creation for testing */
-window._pub = pubnub;
 </script>
 </body>
 </html>
+
