@@ -7,49 +7,89 @@
 
 <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.0.min.js"></script>
 
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
 body{
   margin:0;
-  font-family:system-ui, Inter;
-  background:#f2f2f2;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
+  font-family:Inter,system-ui;
+  background:#f6f6f8;
 }
-.chat{
-  width:520px;
-  height:620px;
+.wrap{
+  display:flex;
+  height:100vh;
+  padding:16px;
+  gap:16px;
+  box-sizing:border-box;
+}
+.panel{
   background:#fff;
-  border-radius:18px;
-  box-shadow:0 10px 30px rgba(0,0,0,.15);
+  border-radius:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+.sidebar{
+  width:300px;
   display:flex;
   flex-direction:column;
 }
 .header{
   padding:14px;
-  background:#F8CFAF;
-  border-radius:18px 18px 0 0;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  border-bottom:1px solid #eee;
+}
+.avatar{
+  width:44px;height:44px;border-radius:50%;background:#ddd;
+}
+.sessions{
+  flex:1;
+  overflow:auto;
+}
+.session{
+  padding:12px;
+  cursor:pointer;
+  border-bottom:1px solid #f0f0f0;
+}
+.session:hover{background:#fafafa}
+.session.active{background:#f8cfa7}
+.chat{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+.chat-header{
+  padding:14px;
+  border-bottom:1px solid #eee;
   font-weight:700;
 }
-.messages{
+.chat-body{
   flex:1;
-  padding:14px;
+  padding:16px;
   overflow:auto;
-  background:#efe6dc;
+  background:linear-gradient(180deg,#e5ddd5,#e3dacb);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
 }
 .bubble{
-  padding:10px 14px;
-  border-radius:14px;
-  margin-bottom:8px;
   max-width:70%;
+  padding:10px 12px;
+  border-radius:12px;
 }
-.me{background:#dcf8c6;margin-left:auto;}
-.them{background:#fff;}
-.input{
+.me{
+  align-self:flex-end;
+  background:#dcf8c6;
+}
+.them{
+  align-self:flex-start;
+  background:#fff;
+}
+.composer{
   display:flex;
   gap:8px;
   padding:12px;
+  border-top:1px solid #eee;
 }
 input{
   flex:1;
@@ -58,11 +98,10 @@ input{
   border:1px solid #ddd;
 }
 button{
-  padding:10px 16px;
+  padding:10px 18px;
   border-radius:999px;
   border:none;
-  background:#fb8b55;
-  color:#fff;
+  background:#f8cfa7;
   font-weight:700;
   cursor:pointer;
 }
@@ -71,78 +110,133 @@ button{
 
 <body>
 
-<div class="chat">
-  <div class="header">Astrologer: Gautam</div>
-  <div id="messages" class="messages"></div>
-  <div class="input">
-    <input id="text" placeholder="Reply to customer">
-    <button onclick="send()">Send</button>
+<div class="wrap">
+
+  <!-- SIDEBAR -->
+  <div class="panel sidebar">
+    <div class="header">
+      <div class="avatar"></div>
+      <div>
+        <div><b>Astrologer Gautam</b></div>
+        <div style="font-size:13px;color:#666">Online</div>
+      </div>
+    </div>
+    <div id="sessions" class="sessions">
+      <div style="padding:12px;color:#777">Waiting for customers…</div>
+    </div>
   </div>
+
+  <!-- CHAT -->
+  <div class="panel chat">
+    <div id="chatHeader" class="chat-header">
+      Select a customer
+    </div>
+
+    <div id="chatBody" class="chat-body"></div>
+
+    <div class="composer">
+      <input id="reply" placeholder="Type reply…">
+      <button onclick="send()">Send</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
-/* CONFIG */
-const CHANNEL = "astro-Gautam";
+/* ================= CONFIG ================= */
+const ASTRO = "Gautam";
+const CONTROL = `astro_${ASTRO}_control`;
 
 const pubnub = new PubNub({
   publishKey: "pub-c-a90a128a-4e77-4b6a-bbb3-59d0fb688ddc",
   subscribeKey: "sub-c-1b514e35-fab1-4baf-88f1-6b628ab7e9c2",
-  uuid: "astro-Gautam"
+  uuid: "astro_" + ASTRO
 });
 
-/* Subscribe */
-pubnub.subscribe({ channels: [CHANNEL] });
+/* ================= STATE ================= */
+let sessions = {};
+let activeSession = null;
 
-/* Receive messages (IGNORE OWN MESSAGES) */
+/* ================= DOM ================= */
+const sessionsDiv = document.getElementById("sessions");
+const chatBody = document.getElementById("chatBody");
+const chatHeader = document.getElementById("chatHeader");
+const replyInput = document.getElementById("reply");
+
+/* ================= LISTENERS ================= */
 pubnub.addListener({
-  message: e => {
-    if (e.publisher === pubnub.getUUID()) return;
-    addBubble(e.message.text, "them");
-  }
-});
-
-function send(){
-  const text = document.getElementById("text").value.trim();
-  if(!text) return;
-
-  pubnub.publish({
-    channel: CHANNEL,
-    message: { text }
-  });
-
-  addBubble(text, "me");
-  document.getElementById("text").value="";
-}
-
-function addBubble(text, who){
-  const div = document.createElement("div");
-  div.className = "bubble " + who;
-  div.textContent = text;
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
-}
-</script>
-
-  pubnub.addListener({
   message: e => {
     const m = e.message;
     const ch = e.channel;
 
-    // new customer joined
+    /* CUSTOMER JOIN */
     if(m?.type==="join" && m.astro===ASTRO){
-      pubnub.subscribe({channels:[m.session]});
-      createSessionUI(m.session, m.customer);
+      if(!sessions[m.session]){
+        sessions[m.session] = m.customer;
+        addSession(m.session, m.customer);
+        pubnub.subscribe({channels:[m.session]});
+      }
       return;
     }
 
-    // chat message
-    if(m?.text){
-      addMessage(ch, m.text, m.sender===pubnub.getUUID()?"me":"them");
+    /* CHAT MESSAGE */
+    if(m?.text && ch === activeSession){
+      addBubble(m.text, m.sender === pubnub.getUUID() ? "me" : "them");
     }
   }
 });
 
+/* subscribe control */
+pubnub.subscribe({channels:[CONTROL]});
+
+/* ================= UI ================= */
+function addSession(sessionId, customer){
+  if(sessionsDiv.textContent.includes("Waiting")){
+    sessionsDiv.innerHTML="";
+  }
+  const d=document.createElement("div");
+  d.className="session";
+  d.textContent="Customer: "+customer;
+  d.onclick=()=>openSession(sessionId, customer, d);
+  sessionsDiv.prepend(d);
+}
+
+function openSession(sessionId, customer, el){
+  document.querySelectorAll(".session").forEach(s=>s.classList.remove("active"));
+  el.classList.add("active");
+
+  activeSession=sessionId;
+  chatHeader.textContent="Chat with "+customer;
+  chatBody.innerHTML="";
+}
+
+function addBubble(text, cls){
+  const d=document.createElement("div");
+  d.className="bubble "+cls;
+  d.textContent=text;
+  chatBody.appendChild(d);
+  chatBody.scrollTop=chatBody.scrollHeight;
+}
+
+/* ================= SEND ================= */
+function send(){
+  const t=replyInput.value.trim();
+  if(!t || !activeSession) return;
+
+  pubnub.publish({
+    channel:activeSession,
+    message:{
+      text:t,
+      sender:pubnub.getUUID()
+    }
+  });
+
+  addBubble(t,"me");
+  replyInput.value="";
+}
+</script>
 
 </body>
 </html>
+
 
