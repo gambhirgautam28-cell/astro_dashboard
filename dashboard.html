@@ -1,242 +1,101 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
+<title>Astrologer Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Astrologer Dashboard — Gautam</title>
 
-<script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.0.min.js"></script>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body{
-  margin:0;
-  font-family:Inter,system-ui;
-  background:#f6f6f8;
-}
-.wrap{
-  display:flex;
-  height:100vh;
-  padding:16px;
-  gap:16px;
-  box-sizing:border-box;
-}
-.panel{
-  background:#fff;
-  border-radius:14px;
-  box-shadow:0 10px 30px rgba(0,0,0,.08);
-}
-.sidebar{
-  width:300px;
-  display:flex;
-  flex-direction:column;
-}
-.header{
-  padding:14px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-  border-bottom:1px solid #eee;
-}
-.avatar{
-  width:44px;height:44px;border-radius:50%;background:#ddd;
-}
-.sessions{
-  flex:1;
-  overflow:auto;
-}
-.session{
-  padding:12px;
-  cursor:pointer;
-  border-bottom:1px solid #f0f0f0;
-}
-.session:hover{background:#fafafa}
-.session.active{background:#f8cfa7}
-.chat{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-}
-.chat-header{
-  padding:14px;
-  border-bottom:1px solid #eee;
-  font-weight:700;
-}
-.chat-body{
-  flex:1;
-  padding:16px;
-  overflow:auto;
-  background:linear-gradient(180deg,#e5ddd5,#e3dacb);
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-.bubble{
-  max-width:70%;
-  padding:10px 12px;
-  border-radius:12px;
-}
-.me{
-  align-self:flex-end;
-  background:#dcf8c6;
-}
-.them{
-  align-self:flex-start;
-  background:#fff;
-}
-.composer{
-  display:flex;
-  gap:8px;
-  padding:12px;
-  border-top:1px solid #eee;
-}
-input{
-  flex:1;
-  padding:10px;
-  border-radius:999px;
-  border:1px solid #ddd;
-}
-button{
-  padding:10px 18px;
-  border-radius:999px;
-  border:none;
-  background:#f8cfa7;
-  font-weight:700;
-  cursor:pointer;
-}
+body{margin:0;font-family:system-ui;background:#f6f6f8;height:100vh;display:flex}
+.sidebar{width:300px;background:#fff;padding:12px;border-right:1px solid #ddd}
+.session{padding:10px;border-radius:8px;margin-bottom:8px;cursor:pointer;background:#fafafa}
+.chat{flex:1;display:flex;flex-direction:column}
+.chatBody{flex:1;padding:14px;overflow-y:auto}
+.msg{background:#fff;padding:10px 12px;border-radius:12px;margin-bottom:8px;max-width:70%}
+.controls{padding:12px;display:flex;gap:8px}
+input{flex:1;padding:10px;border-radius:20px}
+button{padding:10px 16px;border-radius:20px;background:#f8cfa7;border:none;font-weight:700}
 </style>
 </head>
 
 <body>
 
-<div class="wrap">
+<div class="sidebar">
+  <h3>Sessions</h3>
+  <div id="sessions"></div>
+</div>
 
-  <!-- SIDEBAR -->
-  <div class="panel sidebar">
-    <div class="header">
-      <div class="avatar"></div>
-      <div>
-        <div><b>Astrologer Gautam</b></div>
-        <div style="font-size:13px;color:#666">Online</div>
-      </div>
-    </div>
-    <div id="sessions" class="sessions">
-      <div style="padding:12px;color:#777">Waiting for customers…</div>
-    </div>
+<div class="chat">
+  <div id="chatBody" class="chatBody"></div>
+  <div class="controls">
+    <input id="reply" placeholder="Reply…" />
+    <button onclick="send()">Send</button>
   </div>
-
-  <!-- CHAT -->
-  <div class="panel chat">
-    <div id="chatHeader" class="chat-header">
-      Select a customer
-    </div>
-
-    <div id="chatBody" class="chat-body"></div>
-
-    <div class="composer">
-      <input id="reply" placeholder="Type reply…">
-      <button onclick="send()">Send</button>
-    </div>
-  </div>
-
 </div>
 
 <script>
-/* ================= CONFIG ================= */
-const ASTRO = "Gautam";
-const CONTROL = `astro_${ASTRO}_control`;
-
-const pubnub = new PubNub({
-  publishKey: "pub-c-a90a128a-4e77-4b6a-bbb3-59d0fb688ddc",
-  subscribeKey: "sub-c-1b514e35-fab1-4baf-88f1-6b628ab7e9c2",
-  uuid: "astro_" + ASTRO
+firebase.initializeApp({
+  apiKey:  "AIzaSyBPOzL5ZoYd0NelkDNYk0LGBPDYVT2Tqew",
+  authDomain: "connect-astro-e5309.firebaseapp.com",
+  projectId: "connect-astro-e5309"
 });
+const db=firebase.firestore();
 
-/* ================= STATE ================= */
-let sessions = {};
-let activeSession = null;
+let activeSession=null;
 
-/* ================= DOM ================= */
-const sessionsDiv = document.getElementById("sessions");
-const chatBody = document.getElementById("chatBody");
-const chatHeader = document.getElementById("chatHeader");
-const replyInput = document.getElementById("reply");
+// Load sessions
+db.collection("sessions")
+ .where("astrologerId","==","Gautam")
+ .onSnapshot(snap=>{
+   const box=document.getElementById("sessions");
+   box.innerHTML="";
+   snap.forEach(d=>{
+     const div=document.createElement("div");
+     div.className="session";
+     div.textContent=d.id;
+     div.onclick=()=>openSession(d.id);
+     box.appendChild(div);
+   });
+ });
 
-/* ================= LISTENERS ================= */
-pubnub.addListener({
-  message: e => {
-    const m = e.message;
-    const ch = e.channel;
-
-    /* CUSTOMER JOIN */
-    if(m?.type==="join" && m.astro===ASTRO){
-      if(!sessions[m.session]){
-        sessions[m.session] = m.customer;
-        addSession(m.session, m.customer);
-        pubnub.subscribe({channels:[m.session]});
-      }
-      return;
-    }
-
-    /* CHAT MESSAGE */
-    if(m?.text && ch === activeSession){
-      addBubble(m.text, m.sender === pubnub.getUUID() ? "me" : "them");
-    }
-  }
-});
-
-/* subscribe control */
-pubnub.subscribe({channels:[CONTROL]});
-
-/* ================= UI ================= */
-function addSession(sessionId, customer){
-  if(sessionsDiv.textContent.includes("Waiting")){
-    sessionsDiv.innerHTML="";
-  }
-  const d=document.createElement("div");
-  d.className="session";
-  d.textContent="Customer: "+customer;
-  d.onclick=()=>openSession(sessionId, customer, d);
-  sessionsDiv.prepend(d);
-}
-
-function openSession(sessionId, customer, el){
-  document.querySelectorAll(".session").forEach(s=>s.classList.remove("active"));
-  el.classList.add("active");
-
-  activeSession=sessionId;
-  chatHeader.textContent="Chat with "+customer;
-  chatBody.innerHTML="";
-}
-
-function addBubble(text, cls){
-  const d=document.createElement("div");
-  d.className="bubble "+cls;
-  d.textContent=text;
-  chatBody.appendChild(d);
-  chatBody.scrollTop=chatBody.scrollHeight;
-}
-
-/* ================= SEND ================= */
-function send(){
-  const t=replyInput.value.trim();
-  if(!t || !activeSession) return;
-
-  pubnub.publish({
-    channel:activeSession,
-    message:{
-      text:t,
-      sender:pubnub.getUUID()
-    }
+// Open chat
+function openSession(id){
+ activeSession=id;
+ db.collection("sessions").doc(id)
+  .collection("messages")
+  .orderBy("createdAt")
+  .onSnapshot(snap=>{
+    const chat=document.getElementById("chatBody");
+    chat.innerHTML="";
+    snap.forEach(d=>{
+      const m=d.data();
+      const div=document.createElement("div");
+      div.className="msg";
+      div.textContent=m.text;
+      chat.appendChild(div);
+    });
+    chat.scrollTop=chat.scrollHeight;
   });
+}
 
-  addBubble(t,"me");
-  replyInput.value="";
+// Send reply
+function send(){
+ if(!activeSession)return;
+ const input=document.getElementById("reply");
+ const text=input.value.trim();
+ if(!text)return;
+ input.value="";
+ db.collection("sessions").doc(activeSession)
+  .collection("messages").add({
+    sender:"astrologer",
+    text,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
 }
 </script>
 
 </body>
 </html>
-
-
