@@ -8,11 +8,11 @@
 <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.0.min.js"></script>
 
 <style>
-body{margin:0;font-family:system-ui;background:#f6f6f8;height:100vh;display:flex}
-.sidebar{width:260px;background:#fff;padding:14px;border-right:1px solid #ddd}
+body{margin:0;font-family:system-ui;display:flex;height:100vh}
+.sidebar{width:260px;background:#fff;padding:14px}
 .chat{flex:1;display:flex;flex-direction:column}
 .chatBody{flex:1;padding:14px;overflow-y:auto}
-.msg{padding:10px 12px;border-radius:12px;margin-bottom:8px;max-width:80%}
+.msg{padding:10px;border-radius:12px;margin-bottom:8px;max-width:80%}
 .customer{background:#fff}
 .me{background:#ffe6d5;margin-left:auto}
 .controls{display:flex;gap:8px;padding:12px;background:#fff}
@@ -22,8 +22,7 @@ body{margin:0;font-family:system-ui;background:#f6f6f8;height:100vh;display:flex
 <body>
 
 <div class="sidebar">
-  <h3>Astrologer: Gautam</h3>
-  <p id="status">Waiting for sessions…</p>
+  <h3>Astrologer Gautam</h3>
 </div>
 
 <div class="chat">
@@ -36,21 +35,18 @@ body{margin:0;font-family:system-ui;background:#f6f6f8;height:100vh;display:flex
 
 <script>
 const astrologerId="Gautam";
-let pubnub,currentChannel=null;
+let currentChannel=null;
 
-/* INIT PUBNUB */
-pubnub=new PubNub({
+const pubnub=new PubNub({
   publishKey:"pub-c-a90a128a-4e77-4b6a-bbb3-59d0fb688ddc",
   subscribeKey:"sub-c-1b514e35-fab1-4baf-88f1-6b628ab7e9c2",
   uuid:"Astrologer_"+astrologerId
 });
 
-/* DEMO: subscribe dynamically when session appears */
 pubnub.addListener({
   message:e=>{
-    const m=e.message;
     currentChannel=e.channel;
-    addMsg(m.senderId+": "+m.text,"customer");
+    addMsg(e.message.sender+": "+e.message.text,"customer");
   }
 });
 
@@ -64,7 +60,7 @@ function send(){
 
   pubnub.publish({
     channel:currentChannel,
-    message:{senderId:astrologerId,text:t,ts:Date.now()}
+    message:{ sender:astrologerId, text:t }
   });
 }
 
@@ -79,3 +75,4 @@ function addMsg(t,c){
 
 </body>
 </html>
+
