@@ -9,64 +9,23 @@
 
 <style>
 body{margin:0;font-family:system-ui;background:#f6f6f8;height:100vh;display:flex}
-
-/* SIDEBAR */
-.sidebar{
-  width:260px;
-  background:#fff;
-  padding:14px;
-  border-right:1px solid #ddd;
-}
-
-.sidebar h3{margin-top:0}
-.detail{font-size:14px;margin-bottom:6px}
-
-.status{
-  margin-top:12px;
-  font-size:13px;
-  font-weight:600;
-}
-
+.sidebar{width:260px;background:#fff;padding:14px;border-right:1px solid #ddd}
+.status{font-size:13px;font-weight:600}
 .online{color:green}
 .offline{color:red}
 
-/* CHAT */
 .chat{flex:1;display:flex;flex-direction:column}
 .chatBody{flex:1;padding:14px;overflow-y:auto}
-
-.msg{
-  padding:10px 12px;
-  border-radius:12px;
-  margin-bottom:8px;
-  max-width:80%;
-}
-
+.msg{padding:10px 12px;border-radius:12px;margin-bottom:8px;max-width:80%}
 .customer{background:#fff}
 .me{background:#ffe6d5;margin-left:auto}
-.system{background:#fff3cd;font-size:13px}
+.system{background:#fff3cd}
 
-/* CONTROLS */
-.controls{
-  display:flex;
-  gap:8px;
-  padding:12px;
-  background:#fff;
-}
+.time{font-size:11px;opacity:.6;margin-top:4px}
 
-input{
-  flex:1;
-  padding:10px;
-  border-radius:20px;
-  border:1px solid #ccc;
-}
-
-button{
-  padding:10px 16px;
-  border-radius:20px;
-  background:#F8CFAF;
-  border:none;
-  font-weight:700;
-}
+.controls{display:flex;gap:8px;padding:12px;background:#fff}
+input{flex:1;padding:10px;border-radius:20px}
+button{padding:10px 16px;border-radius:20px;background:#F8CFAF;border:none;font-weight:700}
 </style>
 </head>
 
@@ -74,100 +33,81 @@ button{
 
 <div class="sidebar">
   <h3>Astrologer: Gautam</h3>
-
-  <div id="customerDetails">
-    <p><strong>Waiting for customer…</strong></p>
-  </div>
-
   <div id="custStatus" class="status offline">● Customer Offline</div>
+  <div id="detailsBox"></div>
 </div>
 
 <div class="chat">
   <div id="chatBody" class="chatBody"></div>
-
   <div class="controls">
-    <input id="reply" placeholder="Reply…" />
+    <input id="reply" placeholder="Reply…">
     <button onclick="send()">Send</button>
   </div>
 </div>
 
 <script>
-/* ================= PUBNUB ================= */
 const CHANNEL="astro_gautam_chat";
+const uuid="Astrologer_Gautam";
 
 const pubnub=new PubNub({
   publishKey:"pub-c-a90a128a-4e77-4b6a-bbb3-59d0fb688ddc",
   subscribeKey:"sub-c-1b514e35-fab1-4baf-88f1-6b628ab7e9c2",
-  uuid:"Astrologer_Gautam"
+  uuid
 });
 
 pubnub.subscribe({channels:[CHANNEL],withPresence:true});
 
-const chatBody=document.getElementById("chatBody");
-const detailsBox=document.getElementById("customerDetails");
-const statusEl=document.getElementById("custStatus");
+/* PRESENCE FIX */
+pubnub.hereNow({channels:[CHANNEL]},(s,r)=>{
+  custStatus.textContent =
+    r.channels[CHANNEL]?.occupancy>1
+    ? "● Customer Online"
+    : "● Customer Offline";
+  custStatus.className="status "+(r.channels[CHANNEL]?.occupancy>1?"online":"offline");
+});
 
-/* ================= LISTEN ================= */
 pubnub.addListener({
   message:e=>{
     const m=e.message;
-    if(m.sender===pubnub.getUUID())return;
+    if(m.sender===uuid)return;
 
-    // 🧾 CUSTOMER DETAILS MESSAGE
     if(m.text.startsWith("🧾")){
-      renderDetails(m.text);
+      detailsBox.innerHTML="<pre>"+m.text+"</pre>";
       return;
     }
 
-    addMsg(`${m.sender}: ${m.text}`,"customer");
+    addMsg(m.sender+": "+m.text,"customer",m.ts);
   },
-
   presence:e=>{
     if(e.uuid.startsWith("Customer_")){
-      if(e.action==="join"){
-        statusEl.textContent="● Customer Online";
-        statusEl.className="status online";
-      }
-      if(e.action==="leave"||e.action==="timeout"){
-        statusEl.textContent="● Customer Offline";
-        statusEl.className="status offline";
-      }
+      custStatus.textContent="● Customer "+(e.action==="join"?"Online":"Offline");
+      custStatus.className="status "+(e.action==="join"?"online":"offline");
     }
   }
 });
 
-/* ================= SEND ================= */
 function send(){
-  const input=document.getElementById("reply");
-  const text=input.value.trim();
-  if(!text)return;
-
-  input.value="";
-  addMsg("You: "+text,"me");
+  const t=reply.value.trim();
+  if(!t)return;
+  reply.value="";
+  addMsg("You: "+t,"me",Date.now());
 
   pubnub.publish({
     channel:CHANNEL,
-    message:{sender:pubnub.getUUID(),text}
+    message:{sender:uuid,text:t,ts:Date.now()}
   });
 }
 
-/* ================= HELPERS ================= */
-function addMsg(text,type){
+function addMsg(text,type,ts){
   const d=document.createElement("div");
   d.className="msg "+type;
-  d.textContent=text;
+  d.innerHTML=text+
+    `<div class="time">${new Date(ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>`;
   chatBody.appendChild(d);
   chatBody.scrollTop=chatBody.scrollHeight;
-}
-
-function renderDetails(text){
-  const lines=text.split("\n").slice(1);
-  detailsBox.innerHTML="<h4>Customer Details</h4>"+
-    lines.map(l=>`<div class="detail">${l}</div>`).join("");
 }
 </script>
 
 </body>
 </html>
 
-</html>
