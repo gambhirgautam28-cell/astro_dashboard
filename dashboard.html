@@ -58,12 +58,10 @@ const pubnub=new PubNub({
 pubnub.subscribe({channels:[CHANNEL],withPresence:true});
 
 /* PRESENCE FIX */
-pubnub.hereNow({channels:[CHANNEL]},(s,r)=>{
-  custStatus.textContent =
-    r.channels[CHANNEL]?.occupancy>1
-    ? "● Customer Online"
-    : "● Customer Offline";
-  custStatus.className="status "+(r.channels[CHANNEL]?.occupancy>1?"online":"offline");
+pubnub.hereNow({channels:[CHANNEL]},(_,r)=>{
+  const online=r.channels[CHANNEL]?.occupancy>1;
+  custStatus.textContent="● Customer "+(online?"Online":"Offline");
+  custStatus.className="status "+(online?"online":"offline");
 });
 
 pubnub.addListener({
@@ -91,11 +89,7 @@ function send(){
   if(!t)return;
   reply.value="";
   addMsg("You: "+t,"me",Date.now());
-
-  pubnub.publish({
-    channel:CHANNEL,
-    message:{sender:uuid,text:t,ts:Date.now()}
-  });
+  pubnub.publish({channel:CHANNEL,message:{sender:uuid,text:t,ts:Date.now()}});
 }
 
 function addMsg(text,type,ts){
