@@ -1,45 +1,155 @@
-<script>
-const CHANNEL="astro_gautam_chat";
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Astrologer Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-const pubnub=new PubNub({
-  publishKey:"pub-c-a90a128a-4e77-4b6a-bbb3-59d0fb688ddc",
-  subscribeKey:"sub-c-1b514e35-fab1-4baf-88f1-6b628ab7e9c2",
-  uuid:"Astrologer_Gautam"
+<!-- PubNub SDK -->
+<script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.0.min.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#f6f6f8;
+  height:100vh;
+  display:flex;
+}
+
+.sidebar{
+  width:260px;
+  background:#fff;
+  padding:14px;
+  border-right:1px solid #ddd;
+}
+
+.chat{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+.chatBody{
+  flex:1;
+  padding:14px;
+  overflow-y:auto;
+}
+
+.msg{
+  padding:10px 12px;
+  border-radius:12px;
+  margin-bottom:8px;
+  max-width:80%;
+}
+
+.customer{
+  background:#fff;
+}
+
+.me{
+  background:#ffe6d5;
+  margin-left:auto;
+}
+
+.controls{
+  display:flex;
+  gap:8px;
+  padding:12px;
+  background:#fff;
+}
+
+.controls input{
+  flex:1;
+  padding:10px;
+  border-radius:20px;
+  border:1px solid #ccc;
+}
+
+.controls button{
+  padding:10px 16px;
+  border-radius:20px;
+  background:#F8CFAF;
+  border:none;
+  font-weight:700;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+  <h3>Astrologer: Gautam</h3>
+  <p>Live Customer Chat</p>
+</div>
+
+<div class="chat">
+  <div id="chatBody" class="chatBody"></div>
+
+  <div class="controls">
+    <input id="reply" placeholder="Reply…" />
+    <button onclick="send()">Send</button>
+  </div>
+</div>
+
+<script>
+/* ================= PUBNUB SETUP ================= */
+const CHANNEL = "astro_gautam_chat";
+
+const pubnub = new PubNub({
+  publishKey: "pub-c-a90a128a-4e77-4b6a-bbb3-59d0fb688ddc",
+  subscribeKey: "sub-c-1b514e35-fab1-4baf-88f1-6b628ab7e9c2",
+  uuid: "Astrologer_Gautam"
 });
 
-pubnub.subscribe({channels:[CHANNEL]});
+/* ================= DOM ================= */
+const chatBody = document.getElementById("chatBody");
 
+/* ================= SUBSCRIBE ================= */
+pubnub.subscribe({ channels: [CHANNEL] });
+
+/* ================= RECEIVE ================= */
 pubnub.addListener({
-  message:e=>{
-    const m=e.message;
-    if(m.sender === pubnub.getUUID()) return;
-    addMsg(`${m.sender}: ${m.text}`);
+  message: function (event) {
+    const m = event.message;
+
+    // Ignore own messages
+    if (m.sender === pubnub.getUUID()) return;
+
+    addMsg(`${m.sender}: ${m.text}`, false);
   }
 });
 
+/* ================= SEND ================= */
 function send(){
-  const input=document.getElementById("reply");
-  const text=input.value.trim();
-  if(!text)return;
-  input.value="";
-  addMsg("You: "+text,true);
+  const input = document.getElementById("reply");
+  const text = input.value.trim();
+  if(!text) return;
 
+  input.value = "";
+
+  // show locally
+  addMsg("You: " + text, true);
+
+  // send to customer
   pubnub.publish({
-    channel:CHANNEL,
-    message:{
-      sender:pubnub.getUUID(),
-      text:text
+    channel: CHANNEL,
+    message: {
+      sender: pubnub.getUUID(),
+      text: text
     }
   });
 }
 
-function addMsg(text,me=false){
-  const d=document.createElement("div");
-  d.className="msg "+(me?"me":"customer");
-  d.textContent=text;
+/* ================= UI HELPER ================= */
+function addMsg(text, me){
+  const d = document.createElement("div");
+  d.className = "msg " + (me ? "me" : "customer");
+  d.textContent = text;
   chatBody.appendChild(d);
-  chatBody.scrollTop=chatBody.scrollHeight;
+  chatBody.scrollTop = chatBody.scrollHeight;
 }
 </script>
 
-
+</body>
+</html>
